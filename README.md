@@ -2,19 +2,53 @@
 
 # Rafa — Autonomous Task Agent
 
-Drop this folder into any project. Write your tasks in `TASKS.json`. Let Rafa work through them autonomously — committing as it goes, updating Linear, and sending you a Slack DM after each one.
+Drop this folder into any project. Plan your work using AI skills, write tasks in `TASKS.json`, and let Rafa execute them autonomously — committing as it goes, updating Linear, and sending you a Slack DM after each one.
 
 Rafa is a team-flavored take on the [Ralph](https://ghuntley.com/ralph/) pattern: an AI coding agent running in a loop, picking tasks, doing the work, and reporting back.
 
 ---
 
-## How it works
+## The full workflow
 
-1. You write tasks in `TASKS.json` with a status, owner, and optional dependencies
-2. You run `./scripts/create-linear-tasks.sh` once to create matching issues in Linear
-3. You run `./afk-rafa.sh -n 5` (or however many tasks you want)
-4. Rafa picks the next eligible task, marks it "In Progress" in Linear, does the work, commits, then marks it "Ready for Review" and DMs you on Slack
-5. Repeat until done
+Rafa is designed to slot into a planning-to-execution pipeline. The human phases use Claude Code skills; the execution phase is fully autonomous.
+
+```
+┌─ PLAN (human, in Claude Code) ──────────────────────────────────────────┐
+│                                                                          │
+│  /grill-me          Stress-test your plan — Claude interviews you        │
+│       ↓             one question at a time until the design is solid     │
+│  /to-prd            Synthesize the conversation into a structured PRD    │
+│       ↓                                                                  │
+│  /to-rafa-tasks     Break the PRD into TASKS.json (vertical slices,      │
+│                     dependencies, owners, priorities, TDD flags)         │
+│                                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+        ↓
+┌─ SYNC (one command) ────────────────────────────────────────────────────┐
+│  ./scripts/create-linear-tasks.sh   Create Linear issues from TASKS.json│
+└──────────────────────────────────────────────────────────────────────────┘
+        ↓
+┌─ EXECUTE (autonomous) ──────────────────────────────────────────────────┐
+│  ./afk-rafa.sh -n N   Rafa picks tasks, implements, tests (TDD if on),  │
+│                        commits, updates Linear → Ready for Review,       │
+│                        and DMs you on Slack after each one               │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Skills
+
+Install these Claude Code skills to power the planning phases. See [`skills/README.md`](skills/README.md) for installation instructions.
+
+| Skill | Source | What it does |
+|-------|--------|-------------|
+| `grill-me` | [Matt Pocock's repo](https://github.com/mattpocock/skills) | Interviews you about your plan, one question at a time |
+| `to-prd` | [Matt Pocock's repo](https://github.com/mattpocock/skills) | Synthesizes conversation into a structured PRD |
+| `to-rafa-tasks` | **This repo** (`skills/to-rafa-tasks/`) | Converts PRD into `TASKS.json` with Rafa's schema |
+| `tdd` | [Matt Pocock's repo](https://github.com/mattpocock/skills) | Red-green-refactor guidance for manual sessions |
+
+`grill-me`, `to-prd`, and `tdd` are used as-is from Matt's repo. `to-rafa-tasks` is Rafa-specific and lives here.
 
 ---
 
@@ -68,11 +102,20 @@ Open `rafa-config.json` and set:
 - `linear.project_id` — your Linear project name or slugId
 - `linear.done_state_name` — the Linear state Rafa moves issues to when done (default: `"Ready for Review"`)
 - `slack.notify_user_id` — your Slack user ID (see Slack setup below)
+- `tdd.enabled` — set to `true` if you want Rafa to use red-green-refactor on all bot tasks
 - Set `linear.enabled` and `slack.enabled` to `true`
 
-### 6. Write your tasks in `TASKS.json`
+### 6. Plan your work (optional but recommended)
 
-Replace the example tasks with your real ones. See the [Task format](#task-format) section below.
+Use Claude Code skills to go from idea to tasks:
+
+```
+/grill-me    ← stress-test the plan
+/to-prd      ← synthesize into a PRD
+/to-rafa-tasks ← write tasks to TASKS.json automatically
+```
+
+Or skip straight to editing `TASKS.json` manually if you already know what to build.
 
 ### 7. Bootstrap: create Linear issues from your task list
 
@@ -81,8 +124,6 @@ Replace the example tasks with your real ones. See the [Task format](#task-forma
 ./scripts/create-linear-tasks.sh             # Create issues + update TASKS.json
 git add TASKS.json && git commit -m "rafa: link Linear issues"
 ```
-
-This creates one Linear issue per task (skipping any that already have a `linear_issue_id`) and writes the identifiers back into `TASKS.json`.
 
 ### 8. Run Rafa
 
@@ -98,7 +139,7 @@ This creates one Linear issue per task (skipping any that already have a `linear
 
 ## Task format
 
-Edit `TASKS.json`. Each task looks like this:
+Each task in `TASKS.json` looks like this:
 
 ```json
 {
@@ -109,6 +150,7 @@ Edit `TASKS.json`. Each task looks like this:
   "owner": "bot",
   "dependencies": [],
   "priority": 1,
+  "tdd": false,
   "linear_issue_id": "",
   "notes": ""
 }
@@ -120,119 +162,87 @@ Edit `TASKS.json`. Each task looks like this:
 |-------|--------|-------|
 | `id` | Any unique string | e.g. `T001`, `FEAT-01` |
 | `title` | Short string | Shown in Linear and Slack |
-| `description` | Markdown string | Rafa reads this and acts on it — be specific |
-| `status` | `todo` `pending` `in_progress` `done` `failed` | Only `todo` tasks are eligible |
-| `owner` | `bot` `human` `both` | `human` tasks are always skipped |
+| `description` | Markdown string | Rafa reads this literally — be specific |
+| `status` | `todo` `pending` `in_progress` `done` `failed` | Only `todo` tasks are picked up |
+| `owner` | `bot` `human` `both` | `human` tasks are always skipped by Rafa |
 | `dependencies` | Array of task IDs | All must be `done` before this task is eligible |
-| `priority` | Integer (1 = highest) | Maps to Linear priority: 1=Urgent, 2=High, 3=Medium, 4+=Low |
-| `linear_issue_id` | e.g. `ENG-42` | Filled automatically by `create-linear-tasks.sh` |
+| `priority` | Integer (1 = highest) | Maps to Linear: 1=Urgent, 2=High, 3=Medium, 4+=Low |
+| `tdd` | `true` / `false` | Per-task TDD override. Inherits from `rafa-config.json` if omitted |
+| `linear_issue_id` | e.g. `ENG-42` | Filled by `create-linear-tasks.sh` — leave empty |
 | `notes` | String | Human notes; Rafa writes failure reasons here |
 
-### Status rules — what Rafa picks
+### Eligibility rules — what Rafa picks
 
-Rafa picks a task only when ALL of the following are true:
+Rafa picks a task only when ALL of these are true:
 - `status` is `todo`
 - `owner` is `bot` or `both`
 - Every task in `dependencies` has `status: done`
 
-Everything else is skipped.
+---
+
+## TDD
+
+When `tdd.enabled` is `true` in `rafa-config.json`, Rafa follows red-green-refactor on every bot task:
+
+1. **RED** — Write a failing test for one behavior (public interface only)
+2. **GREEN** — Write minimal code to pass it
+3. Repeat for each behavior
+4. **REFACTOR** — Clean up once all tests pass
+
+You can also control TDD per task with the `"tdd"` field:
+- `"tdd": true` — force TDD on this task, even if globally disabled
+- `"tdd": false` — opt this task out, even if globally enabled
+- Omit the field — inherit the global setting
 
 ---
 
 ## Linear setup
 
-Rafa needs a Personal API key to create and update issues.
-
 1. Go to **Linear → Settings → API → Personal API keys**
-2. Click **Create key**, name it `Rafa`, copy the value
-3. Add to `.env`: `LINEAR_API_KEY=lin_api_...`
-4. Set your team slug in `rafa-config.json` → `linear.team_id`
-5. Set your project in `rafa-config.json` → `linear.project_id` (name or slugId)
-6. Verify your Linear workflow state names match what's in `rafa-config.json`:
-   - `todo_state_name` — usually `"Todo"` or `"Backlog"`
-   - `in_progress_state_name` — usually `"In Progress"`
-   - `done_state_name` — `"Ready for Review"` by default (so a human reviews before closing)
-7. Set `linear.enabled` to `true`
+2. Create a key named `Rafa` and add it to `.env` as `LINEAR_API_KEY`
+3. Set `linear.team_id` in `rafa-config.json` to your team slug
+4. Set `linear.project_id` to your project name or slugId
+5. Verify your workflow state names match the config (`todo_state_name`, `in_progress_state_name`, `done_state_name`)
+6. Set `linear.enabled` to `true`
 
 **Task lifecycle in Linear:**
-
 ```
-[Todo] → (Rafa starts task) → [In Progress] → (Rafa finishes) → [Ready for Review]
+[Todo] → (Rafa starts) → [In Progress] → (Rafa finishes) → [Ready for Review]
 ```
-
-A human then reviews and moves to Done (or back to In Progress with feedback).
+A human reviews and moves to Done, or sends back to In Progress with feedback.
 
 ---
 
 ## Slack DM setup
 
-Rafa sends you a private message on Slack when it starts a task, finishes one, and when all tasks are complete. Setup takes about 5 minutes.
+Rafa sends you a private DM when it starts a task, finishes one, and when all tasks are complete.
 
-### Step 1 — Create a Slack app
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**, name it `Rafa`
+2. Go to **OAuth & Permissions** → add bot scopes: `chat:write`, `im:write`
+3. Click **Install to Workspace** and copy the **Bot User OAuth Token** (`xoxb-...`) into `.env` as `SLACK_BOT_TOKEN`
+4. Find your Slack user ID: click your name → **View profile** → **⋯** → **Copy member ID** → add to `.env` as `SLACK_NOTIFY_USER_ID`
+5. In Slack, open a DM with your Rafa app and send it any message (this initializes the DM channel)
+6. Set `slack.enabled` to `true` and `slack.mode` to `"dm"` in `rafa-config.json`
 
-1. Go to [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From scratch**
-2. Name it `Rafa`, pick your workspace, click **Create App**
-
-### Step 2 — Add bot scopes
-
-1. In the app settings, go to **OAuth & Permissions**
-2. Under **Bot Token Scopes**, add:
-   - `chat:write` — to send messages
-   - `im:write` — to open DM conversations
-3. Click **Install to Workspace** and authorize
-
-### Step 3 — Copy the Bot Token
-
-Under **OAuth & Permissions → OAuth Tokens**, copy the **Bot User OAuth Token** (starts with `xoxb-`).
-
-Add to `.env`:
-```
-SLACK_BOT_TOKEN=xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-### Step 4 — Find your Slack User ID
-
-In Slack: click your profile picture → **View profile** → **⋯** (More) → **Copy member ID**.
-
-Add to `.env`:
-```
-SLACK_NOTIFY_USER_ID=UXXXXXXXXXX
-```
-
-Each person on the team sets their own `SLACK_NOTIFY_USER_ID` in their `.env`.
-
-### Step 5 — Invite the bot to your DMs
-
-In Slack, search for your app name (`Rafa`) and send it a message. This opens the DM channel and lets the bot reply.
-
-### Step 6 — Enable in config
-
-In `rafa-config.json`:
-```json
-"slack": {
-  "enabled": true,
-  "mode": "dm",
-  ...
-}
-```
+Each person on the team sets their own `SLACK_NOTIFY_USER_ID` in their personal `.env`.
 
 ---
 
 ## Running Rafa
 
 ```bash
-# One task at a time (human-in-the-loop, great for first run)
+# One task, human-in-the-loop (recommended for first run)
 ./rafa-once.sh
 
 # Up to N tasks autonomously
 ./afk-rafa.sh -n 3
 ./afk-rafa.sh -n 20
 
-# Preview what create-linear-tasks.sh would do without creating anything
+# Preview Linear issue creation before committing
 ./scripts/create-linear-tasks.sh --dry-run
 ```
 
-Rafa stops automatically when there are no more eligible tasks and outputs `COMPLETE`.
+Rafa stops automatically when no more eligible tasks exist.
 
 ---
 
@@ -240,30 +250,38 @@ Rafa stops automatically when there are no more eligible tasks and outputs `COMP
 
 ```
 rafa/
-├── README.md                  ← This file
-├── TASKS.json                 ← Your task list (edit this per project)
-├── rafa-config.json           ← Integration settings (edit this per project)
-├── .env.example               ← Template — copy to .env and fill in keys
-├── .env                       ← Your personal API keys (gitignored)
-├── rafa-once.sh               ← Single task, human-in-the-loop
-├── afk-rafa.sh                ← Autonomous loop with -n flag
-├── progress.md                ← Auto-updated log of completed tasks
+├── README.md                    ← This file
+├── TASKS.json                   ← Your task list (edit per project)
+├── rafa-config.json             ← Integration + TDD settings (edit per project)
+├── .env.example                 ← Template — copy to .env and fill in keys
+├── .env                         ← Your personal API keys (gitignored)
+├── rafa-once.sh                 ← Single task, human-in-the-loop
+├── afk-rafa.sh                  ← Autonomous loop with -n flag
+├── progress.md                  ← Auto-updated log of completed tasks
+├── skills/
+│   ├── README.md                ← Skill installation guide
+│   └── to-rafa-tasks/
+│       └── SKILL.md             ← Converts PRD → TASKS.json (install this)
 └── scripts/
-    ├── create-linear-tasks.sh ← Bootstrap: TASKS.json → Linear issues
-    ├── update-linear.sh       ← Called by Rafa to update Linear status
-    └── notify-slack.sh        ← Called by Rafa to send Slack DMs
+    ├── create-linear-tasks.sh   ← Bootstrap: TASKS.json → Linear issues
+    ├── update-linear.sh         ← Called by Rafa to update Linear status
+    └── notify-slack.sh          ← Called by Rafa to send Slack DMs
 ```
 
 ---
 
 ## Tips
 
-**Write specific task descriptions.** Rafa only reads the `description` field when deciding what to do. Vague descriptions lead to vague results. Be as specific as you would be in a code review comment.
+**Write specific task descriptions.** Rafa reads the `description` field literally and acts on it. Vague descriptions produce vague results. Treat it like a ticket you're handing to a developer — include what files to touch, what interfaces to implement, and what done looks like.
+
+**Use `/to-rafa-tasks` to write tasks for you.** After a planning session with `/grill-me` and `/to-prd`, run `/to-rafa-tasks` and Claude will draft the full task breakdown, quiz you on it, and write it directly to `TASKS.json`.
 
 **Use dependencies to sequence work.** If task B can't start until A is done, add `"dependencies": ["T001"]` to B. Rafa will wait.
 
-**Mark human tasks explicitly.** Set `"owner": "human"` for anything that requires judgment, approval, or real-world action. Rafa will skip it and move on.
+**Mark human tasks explicitly.** Set `"owner": "human"` for decisions, design reviews, or anything requiring real-world action. Rafa skips them and keeps moving.
 
-**Use `pending` to pause a task.** If a task is temporarily blocked (waiting on an external dependency, a client decision, etc.), set its status to `pending`. Change it back to `todo` when it's unblocked.
+**Use `pending` to pause a task.** Temporarily blocked? Set status to `pending`. Change it back to `todo` when unblocked.
 
-**Start with `rafa-once.sh`.** Always run a single iteration first when setting up a new project. Check the commit, verify Linear updated, check Slack. Then switch to `afk-rafa.sh`.
+**Start with `rafa-once.sh`.** Always run a single iteration first on a new project. Verify the commit, check Linear updated, check your Slack DM. Then switch to `afk-rafa.sh`.
+
+**Enable TDD per task, not globally, to start.** Set `"tdd": true` on specific tasks that involve complex logic or need regression protection. Once you trust the pattern, enable it globally in `rafa-config.json`.

@@ -48,5 +48,12 @@
     "skip_statuses": ["pending", "done", "in_progress", "failed"],
     "skip_owners": ["human"],
     "_help": "Controls which tasks Rafa skips. You generally shouldn't need to change this."
+  },
+
+  "tdd": {
+    "enabled": false,
+    "_help": {
+      "enabled": "When true, Rafa follows red-green-refactor on every bot task: write a failing test first, then minimal implementation to pass, then refactor. Individual tasks can override with a 'tdd' boolean field in TASKS.json (true forces TDD on, false opts out even if globally enabled)."
+    }
   }
 }

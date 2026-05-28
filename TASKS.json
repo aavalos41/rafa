@@ -15,7 +15,8 @@
       "bot": "Rafa handles this automatically",
       "human": "Requires a human — Rafa will skip this",
       "both": "Either can do it — Rafa can pick it up"
-    }
+    },
+    "tdd_note": "Optional boolean per task. true = Rafa uses red-green-refactor for this task regardless of global tdd.enabled setting. false = opt out even if tdd.enabled is true globally. Omit to inherit from rafa-config.json."
   },
   "tasks": [
     {
@@ -26,6 +27,7 @@
       "owner": "bot",
       "dependencies": [],
       "priority": 1,
+      "tdd": false,
       "linear_issue_id": "",
       "notes": ""
     },
@@ -37,6 +39,7 @@
       "owner": "bot",
       "dependencies": ["T001"],
       "priority": 2,
+      "tdd": false,
       "linear_issue_id": "",
       "notes": ""
     },
@@ -48,6 +51,7 @@
       "owner": "bot",
       "dependencies": ["T001"],
       "priority": 2,
+      "tdd": false,
       "linear_issue_id": "",
       "notes": ""
     },
@@ -70,6 +74,7 @@
       "owner": "bot",
       "dependencies": ["T002", "T003"],
       "priority": 3,
+      "tdd": false,
       "linear_issue_id": "",
       "notes": ""
     }
