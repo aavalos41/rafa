@@ -1,0 +1,52 @@
+{
+  "_comment": "Rafa configuration. Set enabled to true for each integration you want active. API keys go in .env — never hardcode them here.",
+
+  "project_name": "My Rafa Project",
+
+  "linear": {
+    "enabled": false,
+    "api_key_env": "LINEAR_API_KEY",
+    "team_id": "YOUR-TEAM-SLUG",
+    "project_id": "",
+    "todo_state_name": "Todo",
+    "in_progress_state_name": "In Progress",
+    "done_state_name": "Ready for Review",
+    "_help": {
+      "team_id": "The team slug from your Linear URL: linear.app/YOUR-TEAM-SLUG/...",
+      "project_id": "The project slugId or name from Linear. Run create-linear-tasks.sh with an invalid value to see available projects. Leave empty to create issues without a project.",
+      "todo_state_name": "Linear workflow state for new tasks. Usually 'Todo' or 'Backlog'.",
+      "in_progress_state_name": "Linear state Rafa sets when it starts working on a task.",
+      "done_state_name": "Linear state Rafa sets when it finishes a task. 'Ready for Review' lets a human verify before closing. Must match your Linear workflow state name exactly."
+    }
+  },
+
+  "slack": {
+    "enabled": false,
+    "mode": "dm",
+    "bot_token_env": "SLACK_BOT_TOKEN",
+    "notify_user_id": "",
+    "webhook_url_env": "SLACK_WEBHOOK_URL",
+    "notify_on": ["task_start", "task_done", "all_complete", "error"],
+    "_help": {
+      "mode": "'dm' sends a private message to notify_user_id (requires SLACK_BOT_TOKEN). 'webhook' posts to a channel (requires SLACK_WEBHOOK_URL). dm is recommended.",
+      "notify_user_id": "Your Slack user ID. Find it in Slack: click your name → View profile → ⋯ → Copy member ID. Looks like UXXXXXXXXXX.",
+      "bot_token_env": "Env var name for your Slack Bot Token (starts with xoxb-). Needs scopes: chat:write, im:write.",
+      "notify_on": "Events that trigger a notification: task_start, task_done, all_complete, error."
+    }
+  },
+
+  "git": {
+    "auto_commit": true,
+    "commit_message_prefix": "rafa:",
+    "_help": {
+      "auto_commit": "Set to false to skip commits — useful for reviewing changes before committing.",
+      "commit_message_prefix": "Prepended to every commit: 'rafa: [T001] Initialize project structure'"
+    }
+  },
+
+  "task_selection": {
+    "skip_statuses": ["pending", "done", "in_progress", "failed"],
+    "skip_owners": ["human"],
+    "_help": "Controls which tasks Rafa skips. You generally shouldn't need to change this."
+  }
+}

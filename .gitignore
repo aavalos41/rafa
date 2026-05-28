@@ -1,0 +1,25 @@
+# ── Rafa secrets — never commit these ────────────────────────
+.env
+
+# ── OS files ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor dirs ───────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Node (if the project you drop Rafa into uses Node) ────────
+node_modules/
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+
+# ── Temp files ────────────────────────────────────────────────
+*.tmp
+*.bak
