@@ -1,13 +1,13 @@
 {
-  "project": "My Rafa Project",
+  "project": "My Project",
   "version": "1.0",
   "_schema": {
     "status_values": ["todo", "in_progress", "done", "pending", "failed"],
     "owner_values": ["bot", "human", "both"],
     "status_notes": {
-      "todo": "Ready — Rafa will pick this up",
-      "in_progress": "Rafa is currently working on this",
-      "done": "Completed",
+      "todo": "Ready — Rafa will pick this up (maps to Linear 'Todo')",
+      "in_progress": "Rafa is currently working on this (maps to Linear 'In Progress')",
+      "done": "Completed (maps to Linear 'In Review' for QA)",
       "pending": "Blocked or waiting — Rafa will skip this",
       "failed": "Could not be completed — Rafa will skip this"
     },
@@ -16,13 +16,13 @@
       "human": "Requires a human — Rafa will skip this",
       "both": "Either can do it — Rafa can pick it up"
     },
-    "tdd_note": "Optional boolean per task. true = Rafa uses red-green-refactor for this task regardless of global tdd.enabled setting. false = opt out even if tdd.enabled is true globally. Omit to inherit from rafa-config.json."
+    "tdd_note": "Optional boolean per task. true = red-green-refactor regardless of global tdd.enabled. false = opt out even if globally enabled. Omit to inherit from rafa-config.json."
   },
   "tasks": [
     {
       "id": "T001",
-      "title": "Initialize project structure",
-      "description": "Create the basic folder structure: src/, tests/, docs/. Add a .gitignore that covers node_modules, .env, and OS files. Create a README.md with the project name as the title.",
+      "title": "Set up project structure",
+      "description": "Create the initial project layout. Add a src/ directory with an index file, a tests/ directory, and a .gitignore covering common build artifacts and environment files. Verify the project runs without errors.",
       "status": "todo",
       "owner": "bot",
       "dependencies": [],
@@ -33,46 +33,23 @@
     },
     {
       "id": "T002",
-      "title": "Set up linting config",
-      "description": "Add ESLint with a sensible default config. Add a lint script to package.json if one exists. Run the linter and fix any auto-fixable issues.",
+      "title": "Implement core feature",
+      "description": "Implement the main feature. Write the logic in src/, covering the primary use case described in the project brief. Include unit tests.",
       "status": "todo",
       "owner": "bot",
       "dependencies": ["T001"],
       "priority": 2,
-      "tdd": false,
+      "tdd": true,
       "linear_issue_id": "",
       "notes": ""
     },
     {
       "id": "T003",
-      "title": "Write initial test suite",
-      "description": "Set up a testing framework (Jest or Vitest). Add at least one smoke test that passes. Add a test script to package.json.",
+      "title": "Review and approve implementation",
+      "description": "Human review of the core feature before shipping. Check correctness, edge cases, and code quality.",
       "status": "todo",
-      "owner": "bot",
-      "dependencies": ["T001"],
-      "priority": 2,
-      "tdd": false,
-      "linear_issue_id": "",
-      "notes": ""
-    },
-    {
-      "id": "T004",
-      "title": "Review architecture with team",
-      "description": "Human task: schedule a review meeting to discuss the project architecture before further development begins.",
-      "status": "pending",
       "owner": "human",
-      "dependencies": ["T001"],
-      "priority": 3,
-      "linear_issue_id": "",
-      "notes": "Waiting on team availability"
-    },
-    {
-      "id": "T005",
-      "title": "Add CI workflow",
-      "description": "Create a GitHub Actions workflow at .github/workflows/ci.yml. It should run on push and pull_request, install dependencies, run lint, and run tests.",
-      "status": "todo",
-      "owner": "bot",
-      "dependencies": ["T002", "T003"],
+      "dependencies": ["T002"],
       "priority": 3,
       "tdd": false,
       "linear_issue_id": "",
