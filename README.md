@@ -1,12 +1,12 @@
 ![Rafa](rafa.png)
 
-# RAFA — Recursive Autonomous Feature Agent
+# RAFA | Recursive Autonomous Feature Agent
 
-Drop this folder into any project. Plan your work using AI skills, write tasks in `TASKS.json`, and let Rafa execute them autonomously — committing as it goes, updating Linear to **In Review** when done, and sending you a Slack message after each one.
+Drop this folder into any project. Plan your work using AI skills, write tasks in `TASKS.json`, and let Rafa execute them autonomously; committing as it goes, updating Linear to **In Review** when done, and sending you a Slack message after each one.
 
 Rafa is a team-flavored take on the [Ralph](https://ghuntley.com/ralph/) pattern: an AI coding agent running in a loop, picking tasks, doing the work, and reporting back.
 
-Linear and Slack are handled natively through Claude Code's MCP connections — no API keys, no shell scripts.
+Linear and Slack are handled natively through Claude Code's MCP connections: no API keys, no shell scripts.
 
 ---
 
