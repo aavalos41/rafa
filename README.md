@@ -1,12 +1,12 @@
 ![Rafa](rafa.png)
 
-# RAFA — Recursive Autonomous Feature Agent
+# RAFA | Recursive Autonomous Feature Agent
 
-Drop this folder into any project. Plan your work using AI skills, write tasks in `TASKS.json`, and let Rafa execute them autonomously — committing as it goes, updating Linear to **In Review** when done, and sending you a Slack message after each one.
+Drop this folder into any project. Plan your work using AI skills, write tasks in `TASKS.json`, and let Rafa execute them autonomously; committing as it goes, updating Linear to **In Review** when done, and sending you a Slack message after each one.
 
 Rafa is a team-flavored take on the [Ralph](https://ghuntley.com/ralph/) pattern: an AI coding agent running in a loop, picking tasks, doing the work, and reporting back.
 
-Linear and Slack are handled natively through Claude Code's MCP connections — no API keys, no shell scripts.
+Linear and Slack are handled natively through Claude Code's MCP connections: no API keys, no shell scripts.
 
 ---
 
@@ -34,6 +34,7 @@ Linear and Slack are handled natively through Claude Code's MCP connections — 
 ```
 
 **Task lifecycle in Linear:**
+
 ```
 [Todo] → (Rafa starts) → [In Progress] → (Rafa finishes) → [In Review]
                                                                    ↓
@@ -54,12 +55,12 @@ Linear and Slack are handled natively through Claude Code's MCP connections — 
 
 Install these Claude Code skills to power the planning phases. See [`skills/README.md`](skills/README.md) for installation instructions.
 
-| Skill | What it does |
-|-------|-------------|
-| `grill-me` | Interviews you about your plan, one question at a time |
-| `to-prd` | Synthesizes conversation into a structured PRD |
+| Skill           | What it does                                                           |
+| --------------- | ---------------------------------------------------------------------- |
+| `grill-me`      | Interviews you about your plan, one question at a time                 |
+| `to-prd`        | Synthesizes conversation into a structured PRD                         |
 | `to-rafa-tasks` | Converts PRD into `TASKS.json` with Rafa's schema (lives in `skills/`) |
-| `tdd` | Red-green-refactor guidance for manual sessions |
+| `tdd`           | Red-green-refactor guidance for manual sessions                        |
 
 ---
 
@@ -139,22 +140,23 @@ Each task in `TASKS.json` looks like this:
 
 ### Field reference
 
-| Field | Values | Notes |
-|-------|--------|-------|
-| `id` | Any unique string | e.g. `T001`, `FEAT-01` |
-| `title` | Short string | Shown in Linear and Slack |
-| `description` | Markdown string | Rafa reads this literally — be specific |
-| `status` | `todo` `pending` `in_progress` `done` `failed` | Only `todo` tasks are picked up |
-| `owner` | `bot` `human` `both` | `human` tasks are always skipped by Rafa |
-| `dependencies` | Array of task IDs | All must be `done` before this task is eligible |
-| `priority` | Integer (1 = highest) | Informational — Rafa picks the first eligible task |
-| `tdd` | `true` / `false` | Per-task TDD override. Inherits from `rafa-config.json` if omitted |
-| `linear_issue_id` | e.g. `LF-2` | Set when creating issues via Claude Code MCP |
-| `notes` | String | Rafa writes failure reasons here |
+| Field             | Values                                         | Notes                                                              |
+| ----------------- | ---------------------------------------------- | ------------------------------------------------------------------ |
+| `id`              | Any unique string                              | e.g. `T001`, `FEAT-01`                                             |
+| `title`           | Short string                                   | Shown in Linear and Slack                                          |
+| `description`     | Markdown string                                | Rafa reads this literally — be specific                            |
+| `status`          | `todo` `pending` `in_progress` `done` `failed` | Only `todo` tasks are picked up                                    |
+| `owner`           | `bot` `human` `both`                           | `human` tasks are always skipped by Rafa                           |
+| `dependencies`    | Array of task IDs                              | All must be `done` before this task is eligible                    |
+| `priority`        | Integer (1 = highest)                          | Informational — Rafa picks the first eligible task                 |
+| `tdd`             | `true` / `false`                               | Per-task TDD override. Inherits from `rafa-config.json` if omitted |
+| `linear_issue_id` | e.g. `LF-2`                                    | Set when creating issues via Claude Code MCP                       |
+| `notes`           | String                                         | Rafa writes failure reasons here                                   |
 
 ### Eligibility rules
 
 Rafa picks a task only when ALL of these are true:
+
 - `status` is `todo`
 - `owner` is `bot` or `both`
 - Every task in `dependencies` has `status: done`
@@ -171,6 +173,7 @@ When `tdd.enabled` is `true` in `rafa-config.json`, Rafa follows red-green-refac
 4. **REFACTOR** — Clean up once all tests pass
 
 Per-task overrides with the `"tdd"` field:
+
 - `"tdd": true` — force TDD on this task, even if globally disabled
 - `"tdd": false` — opt this task out, even if globally enabled
 - Omit the field — inherit the global setting
