@@ -60,12 +60,16 @@ Two commits — one per repo:
 
 Commit code changes to the project (parent directory, one level up from this Rafa folder):
   git -C .. add -A && git -C .. commit -m 'rafa: [<id>] done — <title>'
+  git -C .. push
 
 Commit Rafa state (TASKS.json + progress.md) to the Rafa repo:
   git add TASKS.json progress.md && git commit -m 'rafa: [<id>] done — <title>'
 
 If rafa-config.json linear.enabled is true and the task has a non-empty linear_issue_id:
-  Use the Linear save_issue tool to set the issue state to the value of linear.done_state_name.
+  Add a comment in the linear with the same summary used progress.md, append a 'Done by Rafa' at the end of the summary here in Linear
+  Use the Linear save_issue tool to set the issue state to linear.done_state_name.
+  If that state is not found in the team's workflow, fall back to "Ready for QA".
+  If that is also not found, fall back to "Done".
 
 If rafa-config.json slack.enabled is true:
   Use the Slack slack_send_message tool to post to channel slack.notify_channel_id:
